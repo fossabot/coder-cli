@@ -92,6 +92,24 @@ func (c Client) CreateEnvironment(ctx context.Context, orgID string, req CreateE
 	return &env, nil
 }
 
+// CreateEnvironmentFromRepoRequest is used to configure a new environment from a repo.
+type CreateEnvironmentFromRepoRequest struct {
+	RepositoryURL string `json:"repository_url"`
+	// Optional. The default branch will be used if not provided.
+	Branch string `json:"branch"`
+	// Optional. The template name will be used if not provided.
+	Name string `json:"name"`
+}
+
+// CreateEnvironmentFromRepo sends a request to create an environment from a repository.
+func (c Client) CreateEnvironmentFromRepo(ctx context.Context, orgID string, req CreateEnvironmentFromRepoRequest) (*Environment, error) {
+	var env Environment
+	if err := c.requestBody(ctx, http.MethodPost, "/api/private/orgs/"+orgID+"/environments/from-repo", req, &env); err != nil {
+		return nil, err
+	}
+	return &env, nil
+}
+
 // Environments lists environments returned by the given filter.
 // TODO: add the filter options, explore performance issue.
 func (c Client) Environments(ctx context.Context) ([]Environment, error) {
