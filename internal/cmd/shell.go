@@ -173,8 +173,15 @@ func shell(cmd *cobra.Command, cmdArgs []string) error {
 			return err
 		}
 	case env.LatestStat.ContainerStatus == coder.EnvironmentFailed:
-		// TODO: @emyrk Unsure what a failed environment is.
-		//			Need some feedback on how to handle this
+		// A failed container might just keep re-failing. I think it should be investigated by the user
+		return clog.Fatal("the environment has failed to come online",
+			fmt.Sprintf("environment %q is not running", env.Name),
+			fmt.Sprintf("its current status is %q", env.LatestStat.ContainerStatus),
+
+			clog.BlankLine,
+			clog.Tipf("take a look at the build logs to determine what went wrong"),
+			clog.Tipf("run \"coder envs rebuild %s --follow\" to attempt to rebuild the environment", env.Name),
+		)
 	}
 
 	// TODO: @emyrk I can defer to `runCommand` to check this condition.
