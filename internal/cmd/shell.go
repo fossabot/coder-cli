@@ -68,9 +68,9 @@ func shCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "sh [environment_name] [<command [args...]>]",
 		Short: "Open a shell and execute commands in a Coder environment",
-		Long:  "Execute a remote command on the environment\\nIf no command is specified, the default shell is opened.", // TODO: Talk about offline containers
+		Long:  "Execute a remote command on the environment\\nIf no command is specified, the default shell is opened.\\n",
 		Example: `coder sh backend-env
-		coder sh front-end-dev cat ~/config.json`,
+coder sh front-end-dev cat ~/config.json`,
 		Args:               shValidArgs,
 		DisableFlagParsing: true,
 		ValidArgsFunction:  getEnvsForCompletion(coder.Me),
@@ -140,7 +140,7 @@ func shell(cmd *cobra.Command, cmdArgs []string) error {
 			// User selected not to rebuild :(
 			return clog.Fatal(
 				"environment is not ready for use",
-				fmt.Sprintf("environment requires a rebuild"),
+				"environment requires a rebuild",
 				fmt.Sprintf("its current status is %q", env.LatestStat.ContainerStatus),
 				clog.BlankLine,
 				clog.Tipf("run \"coder envs rebuild %s --follow\" to start the environment", env.Name),
@@ -173,7 +173,7 @@ func shell(cmd *cobra.Command, cmdArgs []string) error {
 			return err
 		}
 	case env.LatestStat.ContainerStatus == coder.EnvironmentFailed:
-		// TODO: @emyrk Unsure what a failed enviornment is.
+		// TODO: @emyrk Unsure what a failed environment is.
 		//			Need some feedback on how to handle this
 	}
 
