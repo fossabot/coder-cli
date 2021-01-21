@@ -66,15 +66,15 @@ func shValidArgs(cmd *cobra.Command, args []string) error {
 
 func shCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "sh [environment_name] [<command [args...]>]",
-		Short: "Open a shell and execute commands in a Coder environment",
-		Long:  "Execute a remote command on the environment\\nIf no command is specified, the default shell is opened.\\n",
-		Example: `coder sh backend-env
-coder sh front-end-dev cat ~/config.json`,
+		Use:                "sh [environment_name] [<command [args...]>]",
+		Short:              "Open a shell and execute commands in a Coder environment",
+		Long:               "Execute a remote command on the environment\\nIf no command is specified, the default shell is opened.",
 		Args:               shValidArgs,
 		DisableFlagParsing: true,
 		ValidArgsFunction:  getEnvsForCompletion(coder.Me),
 		RunE:               shell,
+		Example: `coder sh backend-env
+coder sh front-end-dev cat ~/config.json`,
 	}
 }
 
