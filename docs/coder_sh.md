@@ -4,7 +4,7 @@ Open a shell and execute commands in a Coder environment
 
 ### Synopsis
 
-Execute a remote command on the environment\nIf no command is specified, the default shell is opened.
+Execute a remote command on the environment\nIf no command is specified, the default shell is opened.\nIf the command is run in an interactive shell, a user prompt will occur if the environment needs to be rebuilt.
 
 ```
 coder sh [environment_name] [<command [args...]>] [flags]
