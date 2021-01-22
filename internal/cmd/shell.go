@@ -104,8 +104,13 @@ func shell(cmd *cobra.Command, cmdArgs []string) error {
 		return err
 	}
 
-	if err := checkRebuildEnvironment(ctx, client, env); err != nil {
-		return err
+	// TODO: Verify this is the correct behavior
+	isInteractive := terminal.IsTerminal(int(os.Stdout.Fd()))
+	if isInteractive { // checkAndRebuildEnvironment requires an interactive shell
+		// Checks & Rebuilds the environment if needed.
+		if err := checkAndRebuildEnvironment(ctx, client, env); err != nil {
+			return err
+		}
 	}
 
 	if err := runCommand(ctx, client, env, command, args); err != nil {
@@ -162,14 +167,15 @@ func rebuildPrompt(env *coder.Environment) (prompt func() error) {
 	return nil
 }
 
-// checkRebuildEnvironment will check if an environment needs to be rebuilt to be able to be used.
+// checkAndRebuildEnvironment will:
+//	1. Check if an environment needs to be rebuilt to be used
+// 	2. Prompt the user if they want to rebuild the environment (returns an error if they do not)
+//	3. Rebuilds the environment and waits for it to be 'ON'
 // Conditions for rebuilding are:
 //	- Environment is offline
 //	- Environment has rebuild messages requiring a rebuild
-// If the conditions are met, a prompt will be given to the user, allowing them to decide
-// if the environment should be rebuilt.
-func checkRebuildEnvironment(ctx context.Context, client *coder.Client, env *coder.Environment) error {
-	rebuildPrompt := rebuildPrompt(env)
+func checkAndRebuildEnvironment(ctx context.Context, client *coder.Client, env *coder.Environment) error {
+	rebuildPrompt := rebuildPrompt(env) // Fetch the prompt for rebuilding envs w/ reason
 
 	switch {
 	// If this conditonal is true, a rebuild is **required** to make the sh command work.
@@ -197,18 +203,40 @@ func checkRebuildEnvironment(ctx context.Context, client *coder.Client, env *cod
 
 		fallthrough // Fallthrough to watching the logs
 	case env.LatestStat.ContainerStatus == coder.EnvironmentCreating:
+		const (
+			// maxWait is the maxmimum amount of time the cli will wait after the build
+			// logs complete for an environment to be 'ON'. In theory it should be 'ON' pretty
+			// quick after the build logs, but there might be a race condition
+			maxWait = time.Second
+		)
 		// Environment is in the process of being created, just trail the logs
 		// and wait until it is done
 		clog.LogInfo(fmt.Sprintf("Environment %q is in the process of being built.", env.Name))
 
 		// Watch the rebuild.
-		// TODO: (@emyrk) Does trailBuildLogs ensure the container is "ON" when it returns?
-		//		Or do I need to poll `findEnv` until it is 'ON'
 		if err := trailBuildLogs(ctx, client, env.ID); err != nil {
 			return err
 		}
+
 		// newline after trailBuildLogs to place user on a fresh line for their shell
 		fmt.Println()
+
+		// Ensure the env is actually 'ON' after the rebuild. Timeout after
+		// `maxWait`
+		status, err := waitForEnvOnline(ctx, client, env.ID, maxWait)
+		if err != nil {
+			// This means we had a timeout
+			return clog.Fatal("the environment rebuild ran into an issue",
+				fmt.Sprintf("timed out waiting for environment %q to come online", env.Name),
+				fmt.Sprintf("its current status is %q", status),
+				"if the container is still being created, it might still come online after some time",
+				clog.BlankLine,
+				// TODO: (@emyrk) can they check these logs from the cli? Isn't this the logs that
+				//			I just showed them? I'm trying to decide what exactly to tell a user.
+				clog.Tipf("take a look at the build logs to determine what went wrong"),
+			)
+		}
+
 	case env.LatestStat.ContainerStatus == coder.EnvironmentFailed:
 		// A failed container might just keep re-failing. I think it should be investigated by the user
 		return clog.Fatal("the environment has failed to come online",

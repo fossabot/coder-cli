@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"cdr.dev/coder-cli/coder-sdk"
 	"cdr.dev/coder-cli/pkg/clog"
@@ -89,6 +90,42 @@ func findEnv(ctx context.Context, client *coder.Client, envName, userEmail strin
 		)
 	}
 	return env, nil
+}
+
+// waitForEnvOnline will wait up to the maximum time allowed for an environment to have a 'ON' status.
+// It expects the status to be 'Creating'. If the status is 'failed' or 'off', this function will also terminate
+// The returned values is the last known env status and an error if the env never came online
+func waitForEnvOnline(ctx context.Context, client *coder.Client, envID string, maxWait time.Duration) (status coder.EnvironmentStatus, err error) {
+	status = coder.EnvironmentUnknown
+	tmoCtx, cancel := context.WithTimeout(ctx, maxWait)
+	// Retry every 50ms until we get it or we timeout.
+	retry := time.NewTicker(time.Millisecond * 50)
+	defer cancel()
+
+	for {
+		select {
+		case <-tmoCtx.Done():
+			return status, context.DeadlineExceeded
+		case <-retry.C:
+			env, err := client.EnvironmentByID(ctx, envID)
+			if err != nil {
+				// If this api call failed, it will likely fail again, no point to retry and make the user wait
+				return status, err
+			}
+
+			status = env.LatestStat.ContainerStatus
+			switch status {
+			case coder.EnvironmentOn:
+				return status, nil // Exit function, env is online
+			case coder.EnvironmentOff:
+				// Well waiting won't help...
+				return status, fmt.Errorf("environment is off and will not come online")
+			case coder.EnvironmentFailed:
+				// Well waiting won't help...
+				return status, fmt.Errorf("environment has failed to build and will not come online")
+			}
+		}
+	}
 }
 
 type findImgConf struct {
