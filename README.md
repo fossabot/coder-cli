@@ -4,6 +4,7 @@
 [![Documentation](https://godoc.org/cdr.dev/coder-cli?status.svg)](https://pkg.go.dev/cdr.dev/coder-cli/coder-sdk)
 ![build](https://github.com/cdr/coder-cli/workflows/build/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/cdr.dev/coder-cli)](https://goreportcard.com/report/cdr.dev/coder-cli)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fjawnsy%2Fcoder-cli.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fjawnsy%2Fcoder-cli?ref=badge_shield)
 
 `coder` is a command line utility for Coder Enterprise.
 
@@ -29,3 +30,7 @@ Download the latest [release](https://github.com/cdr/coder-cli/releases):
 View the usage documentation [here](./docs/coder.md).
 
 You can find additional Coder usage documentation on [coder.com/docs/cli](https://coder.com/docs/cli).
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fjawnsy%2Fcoder-cli.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fjawnsy%2Fcoder-cli?ref=badge_large)
